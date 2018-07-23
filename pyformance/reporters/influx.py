@@ -27,12 +27,13 @@ class InfluxReporter(Reporter):
     (based on https://influxdb.com/docs/v1.1/guides/writing_data.html)
     """
 
-    def __init__(self, registry=None, reporting_interval=5, prefix="",
+    def __init__(self, registry=None, reporting_interval=5, prefix="",tags={},
                  database=DEFAULT_INFLUX_DATABASE, server=DEFAULT_INFLUX_SERVER,
                  username=DEFAULT_INFLUX_USERNAME,
                  password=DEFAULT_INFLUX_PASSWORD,
                  port=DEFAULT_INFLUX_PORT, protocol=DEFAULT_INFLUX_PROTOCOL,
                  autocreate_database=False, clock=None):
+        self.tagsStr = ",".join(["%s=%s" % (k, tags[k]) for k in tags.keys()])
         super(InfluxReporter, self).__init__(
             registry, reporting_interval, clock)
         self.prefix = prefix
@@ -75,6 +76,8 @@ class InfluxReporter(Reporter):
             values = ",".join(["%s=%s" % (k, v if type(v) is not str \
                                                else '"{}"'.format(v))
                               for (k, v) in metric_values.items()])
+            if self.tagsStr.__len__()>0:
+                table = "%s,%s" % (table, self.tagsStr)
             line = "%s %s %s" % (table, values, timestamp)
             post_data.append(line)
         post_data = "\n".join(post_data)
