@@ -32,7 +32,7 @@ class InfluxReporter(Reporter):
     a metrics tag in metrics_tag_keys is need, ex:  metrics_tag_keys = {"httpRequest": ["url", "status"]},
     """
     def __init__(self, registry=None, reporting_interval=5, prefix="",tags={},
-                 metrics_tag_keys={}, metrics_tag_keys_prefix="^", metrics_tag_split="_",
+                 metrics_tag_keys={}, metrics_tag_prefix="^", metrics_tag_split="#",
                  database=DEFAULT_INFLUX_DATABASE, server=DEFAULT_INFLUX_SERVER,
                  username=DEFAULT_INFLUX_USERNAME,
                  password=DEFAULT_INFLUX_PASSWORD,
@@ -43,7 +43,7 @@ class InfluxReporter(Reporter):
             registry, reporting_interval, clock)
         self.prefix = prefix
         self.metrics_tag_keys = metrics_tag_keys
-        self.metrics_tag_keys_prefix = metrics_tag_keys_prefix
+        self.metrics_tag_prefix = metrics_tag_prefix
         self.metrics_tag_split = metrics_tag_split
         self.database = database
         self.username = username
@@ -88,8 +88,12 @@ class InfluxReporter(Reporter):
                 if len(slices) >= 0:
                     metric_name = slices[1]
                     tag_keys = self.metrics_tag_keys[metric_name]
-                    if len(slices) == len(tag_keys) +1 :
-                        metric_tags_str = ",".join(["%s=%s" % (slices[i+1], tag_keys[i]) for i in range(0, len(tag_keys))])
+                    if len(slices) == len(tag_keys) + 2 :
+                        if not self.prefix:
+                            table = metric_name
+                        else:
+                            table = "%s.%s" % (self.prefix, metric_name)
+                        metric_tags_str = ",".join(["%s=%s" % (tag_keys[i], slices[i+2]) for i in range(0, len(tag_keys))])
                         table = "%s,%s" % (table, metric_tags_str)
                     else:
                         LOG.warn("skip metric tags parse error, metric key:" + str(key))
