@@ -31,7 +31,8 @@ class InfluxReporter(Reporter):
     while name a matric use a prefix '^' to mark the tags, use '_' to split the  metric name and tag values, ex: "^_httpRequest_url1_200"
     a metrics tag in metrics_tag_keys is need, ex:  metrics_tag_keys = {"httpRequest": ["url", "status"]},
     """
-    def __init__(self, registry=None, reporting_interval=5, prefix="",tags={}, metrics_tag_keys = {},
+    def __init__(self, registry=None, reporting_interval=5, prefix="",tags={},
+                 metrics_tag_keys={}, metrics_tag_keys_prefix="^", metrics_tag_split="_",
                  database=DEFAULT_INFLUX_DATABASE, server=DEFAULT_INFLUX_SERVER,
                  username=DEFAULT_INFLUX_USERNAME,
                  password=DEFAULT_INFLUX_PASSWORD,
@@ -42,6 +43,8 @@ class InfluxReporter(Reporter):
             registry, reporting_interval, clock)
         self.prefix = prefix
         self.metrics_tag_keys = metrics_tag_keys
+        self.metrics_tag_keys_prefix = metrics_tag_keys_prefix
+        self.metrics_tag_split = metrics_tag_split
         self.database = database
         self.username = username
         self.password = password
@@ -79,8 +82,8 @@ class InfluxReporter(Reporter):
             else:
                 table = "%s.%s" % (self.prefix, key)
 
-            if str(key).startswith("^_"):
-                slices = str(key).split("_")
+            if str(key).startswith(self.metrics_tag_prefix + self.metrics_tag_split):
+                slices = str(key).split(self.metrics_tag_split)
                 #0 is ^ prefix,  1 is metric name, left is tag values
                 if len(slices) >= 0:
                     metric_name = slices[1]
